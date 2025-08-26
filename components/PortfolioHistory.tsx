@@ -9,7 +9,7 @@ import { PortfolioSnapshot } from '@/types';
 interface PortfolioHistoryProps {
   portfolios: PortfolioSnapshot[];
   filters?: {
-    app?: string;
+    apps?: string[];
   };
 }
 
@@ -39,7 +39,13 @@ export default function PortfolioHistory({ portfolios, filters }: PortfolioHisto
   const getLatestPortfolios = () => {
     const latestByApp = new Map<string, PortfolioSnapshot>();
     
-    portfolios.forEach(portfolio => {
+    // Filter portfolios based on selected apps
+    let filteredPortfolios = portfolios;
+    if (filters?.apps && filters.apps.length > 0) {
+      filteredPortfolios = portfolios.filter(p => filters.apps!.includes(p.app));
+    }
+    
+    filteredPortfolios.forEach(portfolio => {
       const existing = latestByApp.get(portfolio.app);
       if (!existing || new Date(portfolio.date) > new Date(existing.date)) {
         latestByApp.set(portfolio.app, portfolio);

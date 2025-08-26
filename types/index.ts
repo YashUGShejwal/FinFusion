@@ -25,7 +25,7 @@ export interface AppSummary {
 }
 
 export interface FilterOptions {
-  app?: string;
+  apps?: string[];
   dateFrom?: string;
   dateTo?: string;
 }
