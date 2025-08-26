@@ -77,7 +77,7 @@ export default function PortfolioInput({ onUpdate }: PortfolioInputProps) {
             />
           </div>
 
-          <Button type="submit" className="w-full bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
+          <Button type="submit" className="w-full theme-gradient hover:theme-gradient-hover text-white font-medium transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             Add Snapshot
           </Button>
         </form>
