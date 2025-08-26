@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, TrendingUp, Target } from 'lucide-react';
+import { PieChart, TrendingUp, Target, BarChart3 } from 'lucide-react';
 import TransactionForm from '@/components/TransactionForm';
 import PortfolioInput from '@/components/PortfolioInput';
 import PortfolioHistory from '@/components/PortfolioHistory';
@@ -11,6 +11,7 @@ import AppSummaryCard from '@/components/AppSummaryCard';
 import FilterBar from '@/components/FilterBar';
 import OverviewDashboard from '@/components/OverviewDashboard';
 import TransactionList from '@/components/TransactionList';
+import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import { Transaction, PortfolioSnapshot, AppSummary, FilterOptions } from '@/types';
 import { calculateAppSummary } from '@/lib/calculations';
 
@@ -155,7 +156,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-3 lg:w-1/2 mx-auto bg-white/80 backdrop-blur-sm border border-white/30 shadow-lg rounded-xl p-1">
+          <TabsList className="grid w-full grid-cols-4 lg:w-2/3 mx-auto bg-white/80 backdrop-blur-sm border border-white/30 shadow-lg rounded-xl p-1">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <PieChart className="w-4 h-4" />
               Overview
@@ -167,6 +168,10 @@ export default function Home() {
             <TabsTrigger value="portfolio" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               Portfolio
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Analytics
             </TabsTrigger>
           </TabsList>
 
@@ -217,6 +222,15 @@ export default function Home() {
               <PortfolioInput onUpdate={handleUpdatePortfolio} />
               <PortfolioHistory portfolios={portfolios} filters={filters} />
             </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-8">
+            <AnalyticsDashboard 
+              transactions={filteredTransactions}
+              portfolios={portfolios}
+              summaries={summaries}
+              filters={filters}
+            />
           </TabsContent>
         </Tabs>
       </div>
