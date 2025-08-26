@@ -35,6 +35,36 @@ export default function PortfolioHistory({ portfolios, filters }: PortfolioHisto
     });
   };
 
+  const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    const diffInMonths = Math.floor(diffInDays / 30);
+    const diffInYears = Math.floor(diffInDays / 365);
+
+    if (diffInDays === 0) {
+      return 'Updated today';
+    } else if (diffInDays === 1) {
+      return 'Updated 1 day ago';
+    } else if (diffInDays < 7) {
+      return `Updated ${diffInDays} days ago`;
+    } else if (diffInWeeks === 1) {
+      return 'Updated 1 week ago';
+    } else if (diffInWeeks < 4) {
+      return `Updated ${diffInWeeks} weeks ago`;
+    } else if (diffInMonths === 1) {
+      return 'Updated 1 month ago';
+    } else if (diffInMonths < 12) {
+      return `Updated ${diffInMonths} months ago`;
+    } else if (diffInYears === 1) {
+      return 'Updated 1 year ago';
+    } else {
+      return `Updated ${diffInYears} years ago`;
+    }
+  };
+
   // Get latest portfolio value for each app
   const getLatestPortfolios = () => {
     const latestByApp = new Map<string, PortfolioSnapshot>();
@@ -111,6 +141,9 @@ export default function PortfolioHistory({ portfolios, filters }: PortfolioHisto
                       <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                         <Calendar className="w-3 h-3" />
                         {formatDate(portfolio.date)}
+                      </div>
+                      <div className="text-xs text-red-500 mt-1">
+                        {getTimeAgo(portfolio.date)}
                       </div>
                     </div>
                   </div>
