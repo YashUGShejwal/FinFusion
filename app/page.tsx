@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, TrendingUp, Target } from 'lucide-react';
 import TransactionForm from '@/components/TransactionForm';
 import PortfolioInput from '@/components/PortfolioInput';
+import PortfolioHistory from '@/components/PortfolioHistory';
 import AppSummaryCard from '@/components/AppSummaryCard';
 import FilterBar from '@/components/FilterBar';
 import OverviewDashboard from '@/components/OverviewDashboard';
@@ -106,7 +107,7 @@ export default function Home() {
   });
 
   // Calculate summaries
-  const apps = [...new Set(transactions.map(t => t.app))];
+  const apps = Array.from(new Set(transactions.map(t => t.app)));
   const summaries: AppSummary[] = apps.map(app => 
     calculateAppSummary(app, filteredTransactions, portfolios)
   ).sort((a, b) => b.currentValue - a.currentValue);
@@ -202,33 +203,7 @@ export default function Home() {
           <TabsContent value="portfolio" className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <PortfolioInput onUpdate={handleUpdatePortfolio} />
-              <Card className="glass-card">
-                <CardHeader>
-                  <CardTitle>Current Portfolio Values</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {portfolios.length > 0 ? (
-                    <div className="space-y-3">
-                      {portfolios.map((portfolio) => (
-                        <div
-                          key={portfolio.app}
-                          className="flex justify-between items-center p-3 rounded-lg bg-background/50 border"
-                        >
-                          <span className="font-medium">{portfolio.app}</span>
-                          <span className="font-semibold text-green-600">
-                            ₹{portfolio.currentValue.toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground py-8">
-                      <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p>No portfolio values added yet.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <PortfolioHistory portfolios={portfolios} filters={filters} />
             </div>
           </TabsContent>
         </Tabs>

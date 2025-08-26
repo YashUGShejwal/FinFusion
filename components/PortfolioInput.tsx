@@ -40,10 +40,13 @@ export default function PortfolioInput({ onUpdate }: PortfolioInputProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-teal-500" />
-          Update Portfolio Value
+          Add Portfolio Snapshot
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">
+          Add a new portfolio snapshot to track your investment value over time. All historical snapshots are preserved.
+        </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="portfolio-app">Investment App</Label>
@@ -75,7 +78,7 @@ export default function PortfolioInput({ onUpdate }: PortfolioInputProps) {
           </div>
 
           <Button type="submit" className="w-full bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
-            Update Portfolio
+            Add Snapshot
           </Button>
         </form>
       </CardContent>

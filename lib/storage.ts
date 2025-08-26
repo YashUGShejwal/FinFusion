@@ -61,8 +61,21 @@ export async function savePortfolios(portfolios: PortfolioSnapshot[]): Promise<v
 
 export async function addPortfolio(portfolio: PortfolioSnapshot): Promise<void> {
   const portfolios = await getPortfolios();
-  // Remove existing entry for same app (keep only latest)
-  const filtered = portfolios.filter(p => p.app !== portfolio.app);
-  filtered.push(portfolio);
-  await savePortfolios(filtered);
+  // Add new portfolio snapshot to maintain history (like transactions)
+  portfolios.push(portfolio);
+  await savePortfolios(portfolios);
+}
+
+export async function getLatestPortfolios(): Promise<PortfolioSnapshot[]> {
+  const portfolios = await getPortfolios();
+  const latestByApp = new Map<string, PortfolioSnapshot>();
+  
+  portfolios.forEach(portfolio => {
+    const existing = latestByApp.get(portfolio.app);
+    if (!existing || new Date(portfolio.date) > new Date(existing.date)) {
+      latestByApp.set(portfolio.app, portfolio);
+    }
+  });
+  
+  return Array.from(latestByApp.values());
 }
