@@ -83,17 +83,25 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg;
+    @apply bg-white/80 backdrop-blur-md border border-white/30 shadow-xl rounded-xl;
   }
   
   .gradient-bg {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
   }
   
   .hero-gradient {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #8b5cf6 100%);
     background-size: 200% 200%;
     animation: gradient-shift 3s ease-in-out infinite;
+  }
+  
+  .theme-gradient {
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+  }
+  
+  .theme-gradient-hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
   }
   
   @keyframes gradient-shift {
@@ -104,4 +112,10 @@
       background-position: 100% 50%;
     }
   }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] hover:bg-white/90;
+  }
+  
+
 }

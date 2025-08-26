@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, TrendingUp, Target } from 'lucide-react';
 import TransactionForm from '@/components/TransactionForm';
 import PortfolioInput from '@/components/PortfolioInput';
+import PortfolioHistory from '@/components/PortfolioHistory';
 import AppSummaryCard from '@/components/AppSummaryCard';
 import FilterBar from '@/components/FilterBar';
 import OverviewDashboard from '@/components/OverviewDashboard';
@@ -99,15 +100,25 @@ export default function Home() {
 
   // Filter transactions
   const filteredTransactions = transactions.filter(transaction => {
-    if (filters.app && transaction.app !== filters.app) return false;
+    if (filters.apps && filters.apps.length > 0 && !filters.apps.includes(transaction.app)) return false;
     if (filters.dateFrom && transaction.date < filters.dateFrom) return false;
     if (filters.dateTo && transaction.date > filters.dateTo) return false;
     return true;
   });
 
-  // Calculate summaries
-  const apps = [...new Set(transactions.map(t => t.app))];
-  const summaries: AppSummary[] = apps.map(app => 
+  // Get unique apps from filtered transactions and portfolios
+  const allApps = Array.from(new Set([
+    ...filteredTransactions.map(t => t.app),
+    ...portfolios.map(p => p.app)
+  ]));
+
+  // Filter apps based on selected apps
+  const filteredApps = filters.apps && filters.apps.length > 0 
+    ? allApps.filter(app => filters.apps!.includes(app))
+    : allApps;
+
+  // Calculate summaries for filtered apps only
+  const summaries: AppSummary[] = filteredApps.map(app => 
     calculateAppSummary(app, filteredTransactions, portfolios)
   ).sort((a, b) => b.currentValue - a.currentValue);
 
@@ -144,7 +155,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-3 lg:w-1/2 mx-auto">
+          <TabsList className="grid w-full grid-cols-3 lg:w-1/2 mx-auto bg-white/80 backdrop-blur-sm border border-white/30 shadow-lg rounded-xl p-1">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <PieChart className="w-4 h-4" />
               Overview
@@ -172,7 +183,9 @@ export default function Home() {
               {summaries.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {summaries.map((summary) => (
-                    <AppSummaryCard key={summary.app} summary={summary} />
+                    <div key={summary.app} className="card-hover">
+                      <AppSummaryCard summary={summary} />
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -202,33 +215,7 @@ export default function Home() {
           <TabsContent value="portfolio" className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <PortfolioInput onUpdate={handleUpdatePortfolio} />
-              <Card className="glass-card">
-                <CardHeader>
-                  <CardTitle>Current Portfolio Values</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {portfolios.length > 0 ? (
-                    <div className="space-y-3">
-                      {portfolios.map((portfolio) => (
-                        <div
-                          key={portfolio.app}
-                          className="flex justify-between items-center p-3 rounded-lg bg-background/50 border"
-                        >
-                          <span className="font-medium">{portfolio.app}</span>
-                          <span className="font-semibold text-green-600">
-                            ₹{portfolio.currentValue.toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground py-8">
-                      <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p>No portfolio values added yet.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <PortfolioHistory portfolios={portfolios} filters={filters} />
             </div>
           </TabsContent>
         </Tabs>

@@ -6,7 +6,13 @@ export function calculateAppSummary(
   portfolios: PortfolioSnapshot[]
 ): AppSummary {
   const appTransactions = transactions.filter(t => t.app === app);
-  const portfolio = portfolios.find(p => p.app === app);
+  // Get the latest portfolio value for this app (most recent date)
+  const appPortfolios = portfolios.filter(p => p.app === app);
+  const latestPortfolio = appPortfolios.length > 0 
+    ? appPortfolios.reduce((latest, current) => 
+        new Date(current.date) > new Date(latest.date) ? current : latest
+      )
+    : null;
 
   const totalDeposits = appTransactions
     .filter(t => t.type === 'Deposit')
@@ -17,7 +23,7 @@ export function calculateAppSummary(
     .reduce((sum, t) => sum + t.amount, 0);
 
   const netInvestment = totalDeposits - totalWithdrawals;
-  const currentValue = portfolio?.currentValue || 0;
+  const currentValue = latestPortfolio?.currentValue || 0;
   const absoluteReturn = currentValue - netInvestment;
   const percentageReturn = netInvestment > 0 ? (absoluteReturn / netInvestment) * 100 : 0;
 

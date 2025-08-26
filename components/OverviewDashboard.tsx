@@ -88,19 +88,44 @@ export default function OverviewDashboard({ summaries }: OverviewDashboardProps)
       <Card className="glass-card">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Best Performer</CardTitle>
-          <TrendingUp className="h-4 w-4 text-green-600" />
-        </CardHeader>
-        <CardContent>
           {(() => {
+            if (summaries.length === 0) return <TrendingUp className="h-4 w-4 text-muted-foreground" />;
+            
             const best = summaries.reduce((best, current) => 
               current.percentageReturn > best.percentageReturn ? current : best
             , summaries[0]);
+            const isPositive = best?.percentageReturn && best.percentageReturn > 0;
+            
+            return isPositive ? (
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            );
+          })()}
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            if (summaries.length === 0) {
+              return (
+                <>
+                  <div className="text-2xl font-bold text-muted-foreground">N/A</div>
+                  <p className="text-xs text-muted-foreground">No data</p>
+                </>
+              );
+            }
+            
+            const best = summaries.reduce((best, current) => 
+              current.percentageReturn > best.percentageReturn ? current : best
+            , summaries[0]);
+            const isPositive = best?.percentageReturn && best.percentageReturn > 0;
             
             return (
               <>
-                <div className="text-2xl font-bold text-green-600">{best?.app || 'N/A'}</div>
-                <p className="text-xs text-green-600">
-                  +{best?.percentageReturn.toFixed(2) || '0'}% return
+                <div className={`text-2xl font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {best?.app || 'N/A'}
+                </div>
+                <p className={`text-xs ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {isPositive ? '+' : ''}{best?.percentageReturn.toFixed(2) || '0'}% return
                 </p>
               </>
             );
