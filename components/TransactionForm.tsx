@@ -127,7 +127,7 @@ export default function TransactionForm({ onAdd }: TransactionFormProps) {
             />
           </div>
 
-          <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600">
+          <Button type="submit" className="w-full theme-gradient hover:theme-gradient-hover text-white font-medium transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             Add Transaction
           </Button>
         </form>
