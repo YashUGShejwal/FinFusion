@@ -100,15 +100,25 @@ export default function Home() {
 
   // Filter transactions
   const filteredTransactions = transactions.filter(transaction => {
-    if (filters.app && transaction.app !== filters.app) return false;
+    if (filters.apps && filters.apps.length > 0 && !filters.apps.includes(transaction.app)) return false;
     if (filters.dateFrom && transaction.date < filters.dateFrom) return false;
     if (filters.dateTo && transaction.date > filters.dateTo) return false;
     return true;
   });
 
-  // Calculate summaries
-  const apps = Array.from(new Set(transactions.map(t => t.app)));
-  const summaries: AppSummary[] = apps.map(app => 
+  // Get unique apps from filtered transactions and portfolios
+  const allApps = Array.from(new Set([
+    ...filteredTransactions.map(t => t.app),
+    ...portfolios.map(p => p.app)
+  ]));
+
+  // Filter apps based on selected apps
+  const filteredApps = filters.apps && filters.apps.length > 0 
+    ? allApps.filter(app => filters.apps!.includes(app))
+    : allApps;
+
+  // Calculate summaries for filtered apps only
+  const summaries: AppSummary[] = filteredApps.map(app => 
     calculateAppSummary(app, filteredTransactions, portfolios)
   ).sort((a, b) => b.currentValue - a.currentValue);
 
@@ -145,7 +155,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-3 lg:w-1/2 mx-auto">
+          <TabsList className="grid w-full grid-cols-3 lg:w-1/2 mx-auto bg-white/80 backdrop-blur-sm border border-white/30 shadow-lg rounded-xl p-1">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <PieChart className="w-4 h-4" />
               Overview
@@ -173,7 +183,9 @@ export default function Home() {
               {summaries.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {summaries.map((summary) => (
-                    <AppSummaryCard key={summary.app} summary={summary} />
+                    <div key={summary.app} className="card-hover">
+                      <AppSummaryCard summary={summary} />
+                    </div>
                   ))}
                 </div>
               ) : (
