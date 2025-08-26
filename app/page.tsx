@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, TrendingUp, Target, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PieChart, TrendingUp, Target, BarChart3, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import TransactionForm from '@/components/TransactionForm';
 import PortfolioInput from '@/components/PortfolioInput';
 import PortfolioHistory from '@/components/PortfolioHistory';
@@ -15,10 +17,15 @@ import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import { Transaction, PortfolioSnapshot, AppSummary, FilterOptions } from '@/types';
 import { calculateAppSummary } from '@/lib/calculations';
 
+type SortField = 'netInvestment' | 'currentValue' | 'absoluteReturn' | 'percentageReturn';
+type SortOrder = 'asc' | 'desc';
+
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [portfolios, setPortfolios] = useState<PortfolioSnapshot[]>([]);
   const [filters, setFilters] = useState<FilterOptions>({});
+  const [sortField, setSortField] = useState<SortField>('currentValue');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [loading, setLoading] = useState(true);
 
   // Fetch data on component mount
@@ -119,9 +126,37 @@ export default function Home() {
     : allApps;
 
   // Calculate summaries for filtered apps only
-  const summaries: AppSummary[] = filteredApps.map(app => 
+  const baseSummaries: AppSummary[] = filteredApps.map(app => 
     calculateAppSummary(app, filteredTransactions, portfolios)
-  ).sort((a, b) => b.currentValue - a.currentValue);
+  );
+
+  // Sort summaries based on selected sort option
+  const summaries: AppSummary[] = [...baseSummaries].sort((a, b) => {
+    const aValue = a[sortField] as number;
+    const bValue = b[sortField] as number;
+    
+    if (sortOrder === 'desc') {
+      return bValue - aValue;
+    } else {
+      return aValue - bValue;
+    }
+  });
+
+  // Toggle sort order function
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Get sort field display name
+  const getSortFieldName = (field: SortField) => {
+    switch (field) {
+      case 'netInvestment': return 'Net Investment';
+      case 'currentValue': return 'Current Value';
+      case 'absoluteReturn': return 'Returns (₹)';
+      case 'percentageReturn': return 'Returns (%)';
+      default: return 'Current Value';
+    }
+  };
 
   if (loading) {
     return (
@@ -181,6 +216,38 @@ export default function Home() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">App Performance</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Sort by:</span>
+                  <Select value={sortField} onValueChange={(value: SortField) => setSortField(value)}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="currentValue">Current Value</SelectItem>
+                      <SelectItem value="netInvestment">Net Investment</SelectItem>
+                      <SelectItem value="absoluteReturn">Returns (₹)</SelectItem>
+                      <SelectItem value="percentageReturn">Returns (%)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSortOrder}
+                    className="flex items-center gap-1 px-3"
+                  >
+                    {sortOrder === 'desc' ? (
+                      <>
+                        <ArrowDown className="w-4 h-4" />
+                        <span className="hidden sm:inline">High to Low</span>
+                      </>
+                    ) : (
+                      <>
+                        <ArrowUp className="w-4 h-4" />
+                        <span className="hidden sm:inline">Low to High</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
               
               <FilterBar filters={filters} onFiltersChange={setFilters} />
