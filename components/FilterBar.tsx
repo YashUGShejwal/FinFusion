@@ -30,21 +30,48 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
     });
   };
 
-  const handleAppSelect = (value: string) => {
-    if (value === 'all') {
-      onFiltersChange({ ...filters, apps: undefined });
+  const handleAppToggle = (app: string) => {
+    const currentApps = filters.apps || [];
+    let newApps: string[];
+    
+    if (currentApps.includes(app)) {
+      // Remove app
+      newApps = currentApps.filter(a => a !== app);
     } else {
-      onFiltersChange({ ...filters, apps: [value] });
+      // Add app
+      newApps = [...currentApps, app];
     }
+    
+    onFiltersChange({ 
+      ...filters, 
+      apps: newApps.length > 0 ? newApps : undefined 
+    });
   };
 
-  const getSelectedApp = () => {
+  const selectAllApps = () => {
+    onFiltersChange({ 
+      ...filters, 
+      apps: INVESTMENT_APPS 
+    });
+  };
+
+  const isAppSelected = (app: string) => {
+    return filters.apps?.includes(app) || false;
+  };
+
+  const getSelectedAppsCount = () => {
+    return filters.apps?.length || 0;
+  };
+
+  const getDropdownText = () => {
     if (!filters.apps || filters.apps.length === 0) {
-      return 'all';
+      return 'Select apps';
     } else if (filters.apps.length === 1) {
       return filters.apps[0];
+    } else if (filters.apps.length === INVESTMENT_APPS.length) {
+      return 'All Apps';
     } else {
-      return 'multiple';
+      return `${filters.apps.length} apps selected`;
     }
   };
 
@@ -81,18 +108,42 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label>App</Label>
+          <Label>Apps</Label>
           <Select
-            value={getSelectedApp()}
-            onValueChange={handleAppSelect}
+            value=""
+            onValueChange={(value) => {
+              if (value === 'select-all') {
+                selectAllApps();
+              } else {
+                handleAppToggle(value);
+              }
+            }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="All Apps" />
+              <SelectValue placeholder={getDropdownText()} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Apps</SelectItem>
+              {/* Select All Option */}
+              <SelectItem 
+                value="select-all" 
+                className={getSelectedAppsCount() === INVESTMENT_APPS.length ? 
+                  "bg-gradient-to-r from-purple-500 to-blue-500 text-white" : 
+                  ""
+                }
+              >
+                Select All Apps
+              </SelectItem>
+              
+              {/* Individual Apps */}
               {INVESTMENT_APPS.map((app) => (
-                <SelectItem key={app} value={app}>
+                <SelectItem 
+                  key={app} 
+                  value={app} 
+                  className={isAppSelected(app) ? 
+                    "bg-gradient-to-r from-purple-500 to-blue-500 text-white" : 
+                    ""
+                  }
+                >
                   {app}
                 </SelectItem>
               ))}
