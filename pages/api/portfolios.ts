@@ -2,31 +2,44 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getPortfolios, addPortfolio, deletePortfolio } from '@/lib/storage';
 import { PortfolioSnapshot } from '@/types';
 
-// Normalize a date input to a YYYY-MM-DD noon UTC ISO string for consistent ordering
+// Returns today's local date as YYYY-MM-DD
+function todayLocalISO(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+// Resolves date input to an ISO timestamp.
+// - If the chosen date is today → use the actual current time so the display is accurate.
+// - If it's a historical/future date → use noon UTC of that date (time is meaningless for backfill).
+// - If no date given → actual current time.
 function toSnapshotDate(dateInput: string | undefined): string {
-  const todayLocalISO = (() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  })();
+  const now = new Date();
+  const today = todayLocalISO();
 
   if (!dateInput || typeof dateInput !== 'string') {
-    return new Date(`${todayLocalISO}T12:00:00.000Z`).toISOString();
+    return now.toISOString();
   }
+
   const trimmed = dateInput.trim();
   const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
     ? trimmed
     : trimmed.includes('T')
       ? trimmed.split('T')[0]
       : null;
+
   if (dateOnly) {
-    return new Date(`${dateOnly}T12:00:00.000Z`).toISOString();
+    // Today → real current timestamp; historical → noon UTC of that date
+    return dateOnly === today
+      ? now.toISOString()
+      : new Date(`${dateOnly}T12:00:00.000Z`).toISOString();
   }
+
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) {
-    return new Date(`${todayLocalISO}T12:00:00.000Z`).toISOString();
+    return now.toISOString();
   }
   return parsed.toISOString();
 }
