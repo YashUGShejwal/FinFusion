@@ -2,10 +2,18 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getPortfolios, addPortfolio } from '@/lib/storage';
 import { PortfolioSnapshot } from '@/types';
 
-// Normalize date-only (YYYY-MM-DD) to noon UTC for consistent ordering and timezone-safe comparison
+// Normalize a date input to a YYYY-MM-DD noon UTC ISO string for consistent ordering
 function toSnapshotDate(dateInput: string | undefined): string {
+  const todayLocalISO = (() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  })();
+
   if (!dateInput || typeof dateInput !== 'string') {
-    return new Date().toISOString();
+    return new Date(`${todayLocalISO}T12:00:00.000Z`).toISOString();
   }
   const trimmed = dateInput.trim();
   const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
@@ -18,7 +26,7 @@ function toSnapshotDate(dateInput: string | undefined): string {
   }
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) {
-    return new Date().toISOString();
+    return new Date(`${todayLocalISO}T12:00:00.000Z`).toISOString();
   }
   return parsed.toISOString();
 }
