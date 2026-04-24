@@ -10,14 +10,21 @@ import { TrendingUp } from 'lucide-react';
 import { INVESTMENT_APPS } from '@/lib/calculations';
 import { PortfolioSnapshot } from '@/types';
 
+function getTodayString() {
+  return new Date().toISOString().split('T')[0];
+}
+
+export type PortfolioUpdatePayload = Omit<PortfolioSnapshot, 'id'> & { date?: string };
+
 interface PortfolioInputProps {
-  onUpdate: (portfolio: Omit<PortfolioSnapshot, 'id' | 'date'>) => void;
+  onUpdate: (portfolio: PortfolioUpdatePayload) => void;
 }
 
 export default function PortfolioInput({ onUpdate }: PortfolioInputProps) {
   const [formData, setFormData] = useState({
     app: '',
     currentValue: '',
+    date: getTodayString(),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -27,11 +34,13 @@ export default function PortfolioInput({ onUpdate }: PortfolioInputProps) {
     onUpdate({
       app: formData.app,
       currentValue: parseFloat(formData.currentValue),
+      date: formData.date,
     });
 
     setFormData({
       app: '',
       currentValue: '',
+      date: getTodayString(),
     });
   };
 
@@ -62,6 +71,20 @@ export default function PortfolioInput({ onUpdate }: PortfolioInputProps) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="snapshot-date">Snapshot date</Label>
+            <Input
+              id="snapshot-date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Use a past date to backfill historical snapshots.
+            </p>
           </div>
 
           <div className="space-y-2">

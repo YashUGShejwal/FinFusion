@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PieChart, TrendingUp, Target, BarChart3, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import TransactionForm from '@/components/TransactionForm';
-import PortfolioInput from '@/components/PortfolioInput';
+import PortfolioInput, { type PortfolioUpdatePayload } from '@/components/PortfolioInput';
 import PortfolioHistory from '@/components/PortfolioHistory';
 import AppSummaryCard from '@/components/AppSummaryCard';
 import FilterBar from '@/components/FilterBar';
@@ -27,23 +27,38 @@ export default function Home() {
   const [sortField, setSortField] = useState<SortField>('currentValue');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
+      setFetchError(null);
       try {
         const [transactionsRes, portfoliosRes] = await Promise.all([
           fetch('/api/transactions'),
           fetch('/api/portfolios'),
         ]);
-        
+
+        if (!transactionsRes.ok) {
+          const err = await transactionsRes.json().catch(() => ({}));
+          setFetchError(err?.error ?? 'Failed to load transactions');
+          setLoading(false);
+          return;
+        }
+        if (!portfoliosRes.ok) {
+          const err = await portfoliosRes.json().catch(() => ({}));
+          setFetchError(err?.error ?? 'Failed to load portfolios');
+          setLoading(false);
+          return;
+        }
+
         const transactionsData = await transactionsRes.json();
         const portfoliosData = await portfoliosRes.json();
-        
         setTransactions(transactionsData);
         setPortfolios(portfoliosData);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setFetchError('Failed to load data');
       } finally {
         setLoading(false);
       }
@@ -86,20 +101,20 @@ export default function Home() {
   };
 
   // Update portfolio
-  const handleUpdatePortfolio = async (portfolio: Omit<PortfolioSnapshot, 'id' | 'date'>) => {
+  const handleUpdatePortfolio = async (portfolio: PortfolioUpdatePayload) => {
     try {
       const response = await fetch('/api/portfolios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(portfolio),
       });
-      
+
       if (response.ok) {
         const newPortfolio = await response.json();
-        setPortfolios(prev => {
-          const filtered = prev.filter(p => p.app !== portfolio.app);
-          return [...filtered, newPortfolio];
-        });
+        setPortfolios(prev => [...prev, newPortfolio]);
+      } else {
+        const err = await response.json().catch(() => ({}));
+        console.error('Error adding portfolio:', err?.error ?? response.statusText);
       }
     } catch (error) {
       console.error('Error updating portfolio:', error);
@@ -158,12 +173,36 @@ export default function Home() {
     }
   };
 
+  // Last snapshot date across all portfolios (for header)
+  const lastSnapshotDate =
+    portfolios.length > 0
+      ? new Date(Math.max(...portfolios.map((p) => new Date(p.date).getTime())))
+      : null;
+  const lastSnapshotLabel = lastSnapshotDate
+    ? lastSnapshotDate.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading your portfolio...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 flex items-center justify-center">
+        <div className="text-center px-4">
+          <p className="text-destructive font-medium mb-2">{fetchError}</p>
+          <p className="text-sm text-muted-foreground">Refresh the page to try again.</p>
         </div>
       </div>
     );
@@ -184,6 +223,11 @@ export default function Home() {
             <p className="text-blue-200">
               Track your investments across multiple apps with ease
             </p>
+            {lastSnapshotLabel && (
+              <p className="text-blue-200/90 text-sm mt-2">
+                Last snapshot: {lastSnapshotLabel}
+              </p>
+            )}
           </div>
         </div>
       </div>
