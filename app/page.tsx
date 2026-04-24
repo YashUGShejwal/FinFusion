@@ -69,6 +69,9 @@ export default function Home() {
     fetchData();
   }, []);
 
+  const formatINR = (amount: number) =>
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+
   // Add transaction
   const handleAddTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     try {
@@ -77,13 +80,21 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transaction),
       });
-      
+
       if (response.ok) {
         const newTransaction = await response.json();
         setTransactions(prev => [...prev, newTransaction]);
+        const sign = transaction.type === 'Deposit' ? '+' : '-';
+        toast.success('Transaction added', {
+          description: `${transaction.app} · ${transaction.type} · ${sign}${formatINR(transaction.amount)}`,
+        });
+      } else {
+        const err = await response.json().catch(() => ({}));
+        toast.error(err?.error ?? 'Failed to add transaction');
       }
     } catch (error) {
       console.error('Error adding transaction:', error);
+      toast.error('Failed to add transaction');
     }
   };
 
@@ -95,9 +106,6 @@ export default function Home() {
     setTransactions(prev => prev.filter(t => t.id !== id));
 
     const sign = item.type === 'Deposit' ? '+' : '-';
-    const formatted = new Intl.NumberFormat('en-IN', {
-      style: 'currency', currency: 'INR', maximumFractionDigits: 0,
-    }).format(item.amount);
 
     const timeoutId = setTimeout(async () => {
       pendingDeletes.current.delete(id);
@@ -113,7 +121,7 @@ export default function Home() {
     pendingDeletes.current.set(id, timeoutId);
 
     toast('Transaction deleted', {
-      description: `${item.app} · ${item.type} · ${sign}${formatted}`,
+      description: `${item.app} · ${item.type} · ${sign}${formatINR(item.amount)}`,
       action: {
         label: 'Undo',
         onClick: () => {
@@ -132,10 +140,6 @@ export default function Home() {
     if (!item) return;
 
     setPortfolios(prev => prev.filter(p => p.id !== id));
-
-    const formatted = new Intl.NumberFormat('en-IN', {
-      style: 'currency', currency: 'INR', maximumFractionDigits: 0,
-    }).format(item.currentValue);
 
     const timeoutId = setTimeout(async () => {
       pendingDeletes.current.delete(id);
@@ -157,7 +161,7 @@ export default function Home() {
     pendingDeletes.current.set(id, timeoutId);
 
     toast('Portfolio snapshot deleted', {
-      description: `${item.app} · ${formatted}`,
+      description: `${item.app} · ${formatINR(item.currentValue)}`,
       action: {
         label: 'Undo',
         onClick: () => {
@@ -170,7 +174,7 @@ export default function Home() {
     });
   };
 
-  // Update portfolio
+  // Add portfolio snapshot
   const handleUpdatePortfolio = async (portfolio: PortfolioUpdatePayload) => {
     try {
       const response = await fetch('/api/portfolios', {
@@ -182,12 +186,17 @@ export default function Home() {
       if (response.ok) {
         const newPortfolio = await response.json();
         setPortfolios(prev => [...prev, newPortfolio]);
+        toast.success('Portfolio snapshot added', {
+          description: `${portfolio.app} · ${formatINR(portfolio.currentValue)}`,
+        });
       } else {
         const err = await response.json().catch(() => ({}));
         console.error('Error adding portfolio:', err?.error ?? response.statusText);
+        toast.error(err?.error ?? 'Failed to add portfolio snapshot');
       }
     } catch (error) {
       console.error('Error updating portfolio:', error);
+      toast.error('Failed to add portfolio snapshot');
     }
   };
 
