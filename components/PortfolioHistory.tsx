@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, Calendar, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { PortfolioSnapshot } from '@/types';
 
 interface PortfolioHistoryProps {
@@ -11,10 +12,20 @@ interface PortfolioHistoryProps {
   filters?: {
     apps?: string[];
   };
+  onDelete?: (id: string) => void;
 }
 
-export default function PortfolioHistory({ portfolios, filters }: PortfolioHistoryProps) {
+export default function PortfolioHistory({ portfolios, filters, onDelete }: PortfolioHistoryProps) {
   const [expandedApp, setExpandedApp] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!onDelete) return;
+    setDeletingId(id);
+    await onDelete(id);
+    setDeletingId(null);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -152,6 +163,17 @@ export default function PortfolioHistory({ portfolios, filters }: PortfolioHisto
                     <span className="font-semibold text-lg">
                       {formatCurrency(portfolio.currentValue)}
                     </span>
+                    {onDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        disabled={deletingId === portfolio.id}
+                        onClick={(e) => handleDelete(e, portfolio.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                     {isExpanded ? (
                       <ChevronUp className="w-4 h-4 text-muted-foreground" />
                     ) : (
@@ -175,9 +197,22 @@ export default function PortfolioHistory({ portfolios, filters }: PortfolioHisto
                           <Calendar className="w-3 h-3" />
                           {formatDate(snapshot.date)}
                         </div>
-                        <span className="font-medium">
-                          {formatCurrency(snapshot.currentValue)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {formatCurrency(snapshot.currentValue)}
+                          </span>
+                          {onDelete && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              disabled={deletingId === snapshot.id}
+                              onClick={(e) => handleDelete(e, snapshot.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

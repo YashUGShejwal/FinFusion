@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getPortfolios, addPortfolio } from '@/lib/storage';
+import { getPortfolios, addPortfolio, deletePortfolio } from '@/lib/storage';
 import { PortfolioSnapshot } from '@/types';
 
 // Normalize a date input to a YYYY-MM-DD noon UTC ISO string for consistent ordering
@@ -79,8 +79,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break;
       }
 
+      case 'DELETE': {
+        const id = typeof req.query?.id === 'string' ? req.query.id : null;
+        if (!id) {
+          res.status(400).json({ error: 'id query parameter is required' });
+          return;
+        }
+        await deletePortfolio(id);
+        res.status(200).json({ success: true });
+        break;
+      }
+
       default:
-        res.setHeader('Allow', ['GET', 'POST']);
+        res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {

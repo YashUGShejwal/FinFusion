@@ -66,6 +66,12 @@ export async function addPortfolio(portfolio: PortfolioSnapshot): Promise<void> 
   await savePortfolios(portfolios);
 }
 
+export async function deletePortfolio(id: string): Promise<void> {
+  const portfolios = await getPortfolios();
+  const filtered = portfolios.filter(p => p.id !== id);
+  await savePortfolios(filtered);
+}
+
 export async function getLatestPortfolios(): Promise<PortfolioSnapshot[]> {
   const portfolios = await getPortfolios();
   const latestByApp = new Map<string, PortfolioSnapshot>();

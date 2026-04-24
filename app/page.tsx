@@ -100,6 +100,23 @@ export default function Home() {
     }
   };
 
+  // Delete portfolio snapshot
+  const handleDeletePortfolio = async (id: string) => {
+    try {
+      const response = await fetch(`/api/portfolios?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        setPortfolios(prev => prev.filter(p => p.id !== id));
+      } else {
+        const err = await response.json().catch(() => ({}));
+        console.error('Error deleting portfolio:', err?.error ?? response.statusText);
+      }
+    } catch (error) {
+      console.error('Error deleting portfolio:', error);
+    }
+  };
+
   // Update portfolio
   const handleUpdatePortfolio = async (portfolio: PortfolioUpdatePayload) => {
     try {
@@ -331,7 +348,7 @@ export default function Home() {
           <TabsContent value="portfolio" className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <PortfolioInput onUpdate={handleUpdatePortfolio} />
-              <PortfolioHistory portfolios={portfolios} filters={filters} />
+              <PortfolioHistory portfolios={portfolios} filters={filters} onDelete={handleDeletePortfolio} />
             </div>
           </TabsContent>
 
