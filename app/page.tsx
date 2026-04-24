@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ export default function Home() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const pendingDeletes = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Fetch data on component mount
   useEffect(() => {
@@ -85,36 +87,87 @@ export default function Home() {
     }
   };
 
-  // Delete transaction
-  const handleDeleteTransaction = async (id: string) => {
-    try {
-      const response = await fetch(`/api/transactions?id=${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (response.ok) {
-        setTransactions(prev => prev.filter(t => t.id !== id));
+  // Delete transaction (optimistic with undo)
+  const handleDeleteTransaction = (id: string) => {
+    const item = transactions.find(t => t.id === id);
+    if (!item) return;
+
+    setTransactions(prev => prev.filter(t => t.id !== id));
+
+    const sign = item.type === 'Deposit' ? '+' : '-';
+    const formatted = new Intl.NumberFormat('en-IN', {
+      style: 'currency', currency: 'INR', maximumFractionDigits: 0,
+    }).format(item.amount);
+
+    const timeoutId = setTimeout(async () => {
+      pendingDeletes.current.delete(id);
+      try {
+        await fetch(`/api/transactions?id=${id}`, { method: 'DELETE' });
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        setTransactions(prev => [...prev, item]);
+        toast.error('Failed to delete transaction');
       }
-    } catch (error) {
-      console.error('Error deleting transaction:', error);
-    }
+    }, 5000);
+
+    pendingDeletes.current.set(id, timeoutId);
+
+    toast('Transaction deleted', {
+      description: `${item.app} · ${item.type} · ${sign}${formatted}`,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          clearTimeout(pendingDeletes.current.get(id));
+          pendingDeletes.current.delete(id);
+          setTransactions(prev => [...prev, item]);
+        },
+      },
+      duration: 5000,
+    });
   };
 
-  // Delete portfolio snapshot
-  const handleDeletePortfolio = async (id: string) => {
-    try {
-      const response = await fetch(`/api/portfolios?id=${id}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        setPortfolios(prev => prev.filter(p => p.id !== id));
-      } else {
-        const err = await response.json().catch(() => ({}));
-        console.error('Error deleting portfolio:', err?.error ?? response.statusText);
+  // Delete portfolio snapshot (optimistic with undo)
+  const handleDeletePortfolio = (id: string) => {
+    const item = portfolios.find(p => p.id === id);
+    if (!item) return;
+
+    setPortfolios(prev => prev.filter(p => p.id !== id));
+
+    const formatted = new Intl.NumberFormat('en-IN', {
+      style: 'currency', currency: 'INR', maximumFractionDigits: 0,
+    }).format(item.currentValue);
+
+    const timeoutId = setTimeout(async () => {
+      pendingDeletes.current.delete(id);
+      try {
+        const response = await fetch(`/api/portfolios?id=${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          console.error('Error deleting portfolio:', err?.error ?? response.statusText);
+          setPortfolios(prev => [...prev, item]);
+          toast.error('Failed to delete portfolio snapshot');
+        }
+      } catch (error) {
+        console.error('Error deleting portfolio:', error);
+        setPortfolios(prev => [...prev, item]);
+        toast.error('Failed to delete portfolio snapshot');
       }
-    } catch (error) {
-      console.error('Error deleting portfolio:', error);
-    }
+    }, 5000);
+
+    pendingDeletes.current.set(id, timeoutId);
+
+    toast('Portfolio snapshot deleted', {
+      description: `${item.app} · ${formatted}`,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          clearTimeout(pendingDeletes.current.get(id));
+          pendingDeletes.current.delete(id);
+          setPortfolios(prev => [...prev, item]);
+        },
+      },
+      duration: 5000,
+    });
   };
 
   // Update portfolio
